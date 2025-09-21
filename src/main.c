@@ -11,22 +11,39 @@ K_HEAP_DEFINE(heap, 80 * 1024);
 static void simple_display_test(const struct device *disp, uint16_t *buf, int width, int height, struct display_buffer_descriptor *desc) {
     memset(buf, 0xffff, width * height * sizeof(uint16_t));
     
-    double a = 1.0;
-    double b = 0.1;
-    double t_max = 80.0 * 3.14159;
-    int center_x = width / 2;
-    int center_y = height / 2;
+    // Calculate diamond size - smaller diamonds for multiple pattern
+    int diamond_size = (height < width) ? height / 6 : width / 6;
+    if (diamond_size < 3) diamond_size = 3; // Minimum size
     
-    for (double t = 0.0; t < t_max; t += 0.01) {
-        double r = a * exp(b * t);
-        double x_spiral = r * cos(t);
-        double y_spiral = r * sin(t);
-        
-        int x_screen = center_x + (int)x_spiral;
-        int y_screen = center_y - (int)y_spiral;
-        
-        if (x_screen >= 0 && x_screen < width && y_screen >= 0 && y_screen < height) {
-            buf[y_screen + x_screen * height] = 0x0000;
+    // Calculate grid dimensions for multiple diamonds
+    int diamonds_x = width / (diamond_size * 2);
+    int diamonds_y = height / (diamond_size * 2);
+    
+    // Draw multiple diamonds in a grid pattern
+    for (int grid_y = 0; grid_y < diamonds_y; grid_y++) {
+        for (int grid_x = 0; grid_x < diamonds_x; grid_x++) {
+            int center_x = (grid_x * diamond_size * 2) + diamond_size;
+            int center_y = (grid_y * diamond_size * 2) + diamond_size;
+            
+            // Draw upper triangle
+            for (int i = 1; i <= diamond_size; i++) {
+                for (int j = 1; j <= (2*i-1); j++) {
+                    int x_screen = (center_x - i + j);
+                    int y_screen = center_y - diamond_size + i - 1;
+                    if(x_screen >= 0 && x_screen < width && y_screen >= 0 && y_screen < height)
+                        buf[y_screen + x_screen * height] = 1;  
+                }
+            }
+
+            // Draw lower triangle
+            for (int i = diamond_size-1; i >= 1; i--) {
+                for (int j = 1; j <= (2*i-1); j++) {
+                    int x_screen = (center_x - i + j);
+                    int y_screen = center_y + (diamond_size - i - 1);
+                    if(x_screen >= 0 && x_screen < width && y_screen >= 0 && y_screen < height)
+                        buf[y_screen + x_screen * height] = 1; 
+                }
+            }
         }
     }
     
