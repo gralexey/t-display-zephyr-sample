@@ -1,6 +1,6 @@
 # T-Display (ST7789) with Zephyr 4.2.99
 
-This is a sample project demonstrating how to set up and use a T-Display esp32 board (ST7789) with Zephyr RTOS 4.2.99. 
+This is a sample project demonstrating how to set up and use a [T-Display](https://aliexpress.com/item/1005006495816339.html) esp32 board (ST7789) with Zephyr RTOS 4.2.99. 
 
 ## Hardware Requirements
 
@@ -9,7 +9,7 @@ This is a sample project demonstrating how to set up and use a T-Display esp32 b
 
 ## Building and Flashing
 
-To build and flash the project to your ESP32 DevKitC with T-Display:
+To build and flash the project with base ESP32 DevKitC board with T-Display:
 
 ```bash
 west build -p always -b esp32_devkitc/esp32/procpu -- -DDTC_OVERLAY_FILE=boards/esp32_devkitc_st7789v.overlay
