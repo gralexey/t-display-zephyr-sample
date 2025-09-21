@@ -8,76 +8,76 @@
 
 K_HEAP_DEFINE(heap, 80 * 1024);  // 70 KB internal SRAM
 
-// Helper function to check if a point is inside a triangle
-static int point_in_triangle(float px, float py, float x1, float y1, float x2, float y2, float x3, float y3) {
-    float denom = (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3);
-    if (fabs(denom) < 1e-10) return 0;
-    
-    float a = ((y2 - y3) * (px - x3) + (x3 - x2) * (py - y3)) / denom;
-    float b = ((y3 - y1) * (px - x3) + (x1 - x3) * (py - y3)) / denom;
-    float c = 1 - a - b;
-    
-    return (a >= 0 && b >= 0 && c >= 0) ? 1 : 0;
-}
-
-// Recursive function to draw Sierpinski triangle
-static void draw_sierpinski_triangle(uint16_t *buf, int width, int height, 
-                                   float x1, float y1, float x2, float y2, float x3, float y3, 
-                                   int depth, uint16_t color) {
-    if (depth <= 0) {
-        // Draw the triangle by checking each pixel
-        float min_x = fmin(fmin(x1, x2), x3);
-        float max_x = fmax(fmax(x1, x2), x3);
-        float min_y = fmin(fmin(y1, y2), y3);
-        float max_y = fmax(fmax(y1, y2), y3);
-        
-        for (int i = (int)min_x; i <= (int)max_x && i < width; i++) {
-            for (int j = (int)min_y; j <= (int)max_y && j < height; j++) {
-                if (point_in_triangle(i, j, x1, y1, x2, y2, x3, y3)) {
-                    buf[j + i * height] = color;
-                }
-            }
-        }
-        return;
-    }
-    
-    // Calculate midpoints
-    float mx1 = (x1 + x2) / 2.0f;
-    float my1 = (y1 + y2) / 2.0f;
-    float mx2 = (x2 + x3) / 2.0f;
-    float my2 = (y2 + y3) / 2.0f;
-    float mx3 = (x3 + x1) / 2.0f;
-    float my3 = (y3 + y1) / 2.0f;
-    
-    // Recursively draw three smaller triangles
-    draw_sierpinski_triangle(buf, width, height, x1, y1, mx1, my1, mx3, my3, depth - 1, color);
-    draw_sierpinski_triangle(buf, width, height, mx1, my1, x2, y2, mx2, my2, depth - 1, color);
-    draw_sierpinski_triangle(buf, width, height, mx3, my3, mx2, my2, x3, y3, depth - 1, color);
-}
-
 static void simple_display_test(const struct device *disp, uint16_t *buf, int width, int height, struct display_buffer_descriptor *desc) {
-    // Clear the buffer with black background
-    for (int i = 0; i < width * height; i++) {
-        buf[i] = 0x0000; // Black background
+    // Create an artistic geometric pattern with concentric circles and gradients
+    int center_x = width / 2;
+    int center_y = height / 2;
+    int max_radius = (width < height ? width : height) / 2;
+    
+    for (int i = 0; i < width; i++) {
+        for (int j = 0; j < height; j++) {
+            // Calculate distance from center
+            int dx = i - center_x;
+            int dy = j - center_y;
+            int dist_sq = dx * dx + dy * dy;
+            int dist = (int)sqrt(dist_sq);
+            
+            // Create concentric circles with different colors
+            int circle_radius = dist / 8;  // 8-pixel wide rings
+            int ring_color = circle_radius % 3;
+            
+            // Create gradient based on angle
+            int angle = (int)(atan2(dy, dx) * 180 / 3.14159);
+            if (angle < 0) angle += 360;
+            int sector = angle / 60;  // 6 sectors of 60 degrees each
+            
+            // Base colors for each ring type
+            int red, green, blue;
+            
+            switch (ring_color) {
+                case 0:  // Red-orange gradient
+                    red = 255 - (dist * 255) / max_radius;
+                    green = (dist * 128) / max_radius;
+                    blue = 0;
+                    break;
+                case 1:  // Blue-purple gradient
+                    red = (dist * 128) / max_radius;
+                    green = 0;
+                    blue = 255 - (dist * 128) / max_radius;
+                    break;
+                case 2:  // Green-cyan gradient
+                    red = 0;
+                    green = 255 - (dist * 128) / max_radius;
+                    blue = (dist * 255) / max_radius;
+                    break;
+                default:
+                    red = green = blue = 0;
+            }
+            
+            // Add sector-based color variation
+            switch (sector % 3) {
+                case 0: red = (red + 128) / 2; break;
+                case 1: green = (green + 128) / 2; break;
+                case 2: blue = (blue + 128) / 2; break;
+            }
+            
+            // Add some sparkle effect for artistic appeal
+            if ((i + j) % 7 == 0) {
+                red = (red + 255) / 2;
+                green = (green + 255) / 2;
+                blue = (blue + 255) / 2;
+            }
+            
+            // Clamp values
+            if (red > 255) red = 255;
+            if (green > 255) green = 255;
+            if (blue > 255) blue = 255;
+            
+            // Convert to RGB565 format
+            uint16_t color = ((red & 0xF8) << 8) | ((green & 0xFC) << 3) | (blue >> 3);
+            buf[j + i * height] = color;
+        }
     }
-    
-    // Calculate triangle vertices for a centered equilateral triangle
-    float center_x = width / 2.0f;
-    float center_y = height / 2.0f;
-    float size = fmin(width, height) * 0.8f; // 80% of the smaller dimension
-    
-    // Equilateral triangle vertices
-    float x1 = center_x;
-    float y1 = center_y - size * 0.5f;
-    float x2 = center_x - size * 0.433f; // cos(30°) ≈ 0.866, so 0.866/2 ≈ 0.433
-    float y2 = center_y + size * 0.25f;
-    float x3 = center_x + size * 0.433f;
-    float y3 = center_y + size * 0.25f;
-    
-    // Draw Sierpinski triangle with 6 levels of recursion
-    uint16_t triangle_color = 0xFFFF; // White color
-    draw_sierpinski_triangle(buf, width, height, x1, y1, x2, y2, x3, y3, 6, triangle_color);
-    
     display_write(disp, 0, 0, desc, buf);
 }
  
