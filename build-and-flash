@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python -m west build -p always -b esp32_devkitc/esp32/procpu -- -DDTC_OVERLAY_FILE=boards/esp32_devkitc_st7789v.overlay && python -m west flash --esp-baud-rate 460800   

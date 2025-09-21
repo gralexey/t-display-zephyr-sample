@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Conway's Game of Life Configuration for display test"
+
+config CONWAY_TEST
+	bool "Enable Conway's Game of Life test"
+	default n
+	help
+	  Enable the Conway's Game of Life cellular test.
+	  When enabled, the application will run Conway's Game of Life
+	  simulation on the display.
+
+endmenu
+
+source "Kconfig.zephyr"
