@@ -93,11 +93,9 @@ static void calc_field_next_step(bool field[field_width][field_height]) {
 }
 
 void conway_run(const struct device *disp, uint16_t *buf, int width, int height, struct display_buffer_descriptor *desc) {
-
     bool field[field_width][field_height];
     
-    unsigned int seed = k_cycle_get_32();
-    printk("Seed: %u\n", seed);
+    unsigned int seed = 78874678;
     initialize_field(field, seed);
 
     set_field_to_buf(field, buf, height);
@@ -114,7 +112,5 @@ void conway_run(const struct device *disp, uint16_t *buf, int width, int height,
         display_write(disp, 0, 0, desc, buf);
         
         k_sleep(K_MSEC(50));
-
-        printk("Step: %d (seed: %u)\n", t, seed);
     }
 }
